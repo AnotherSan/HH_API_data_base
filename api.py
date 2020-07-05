@@ -1,63 +1,34 @@
 import requests
-x=[]
-count=0
-result=[]
-key=[]
+
+count = 0
 url = 'https://api.hh.ru/vacancies/'
-par = {'text': 'администратор баз данных','premium':'true','area':1261,'per_page':'100', 'page':[el for el in range(0,20)]}#1261
-r = requests.get(url, params=par)
-e=r.json()
-#x.append(e)
-y = e['items']
-for i in y:
-    if i['name']!=None:
-        vacancies=i['name']
-    if i['id']!=None:
-        ide=i['id']
-        vac='https://api.hh.ru/vacancies/'+ide
-        req=requests.get(vac)
-        eid=req.json()
-        if eid['area']!=None:
-            area=eid['area']
-            if area['name']!=None:
-                city=area['name']
-                town=str(city)
-        if eid['employer']!=None:
-            employer=eid['employer']
-            if employer['name']!=None:
-                emName=employer['name']
-                em=str(emName)
-        if eid['key_skills']!=None:
-            ks=eid['key_skills']
-            key_name_list=[]
-            for el in ks:
-                if el['name']!=None:
-                    name=el['name']
-                    key_name_list.append(str(name))
-        count=count+1
-        co=str(count)
-        words=co+town+' '+em
-        print(vacancies,ide,words,[item for item in key_name_list])
+need_skills = ['SQL', 'Oracle']
 
+par = {'text': '("Проблемно-ориентированный" OR "Проблемно ориентированный") '
+               'OR (Администратор OR Administrator OR Аналитик or Analyst) '
+               'AND (производительности OR "баз данных" OR бд OR "хранилища данных" OR Database OR DB) '
+               'OR (АБД OR DBA OR СУБД OR "Система управления базами данных" OR "Database Management System" OR DBMS OR DMS)',
+       'premium': 'false', 'area': 1261, 'per_page': '100', 'page': 1}
 
+for i in requests.get(url, params=par).json()['items']:
+    flag = False
+    vacancy_string = ''
+    key_skills_string = ''
+    vac_id = i['id']
+    vac_name = i['name']
+    vacancy = requests.get('https://api.hh.ru/vacancies/' + vac_id).json()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    key_skills = vacancy['key_skills']
+    for e in key_skills:
+        skill = e['name']
+        if skill is not None:
+            key_skills_string += ' ' + skill + ','
+            if need_skills.count(skill):
+                flag = True
+    if flag:
+        area = vacancy['area']
+        employer = vacancy['employer']
+        count += 1
+        vacancy_string += str(count) + ' ' + vac_id + ' ' + vac_name + '; ' + area['name'] + '; ' + employer['name']
+        vacancy_string += ';'
+        print(vacancy_string + key_skills_string)
